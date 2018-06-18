@@ -704,9 +704,10 @@ void* TrainModelThread(void* id) {
         // printf("d = %i\n", vocab[word].code[my_d]);
         // printf("f = %f\n", f);
     }
+    printf("local_iter: %lld\n", local_iter);
     fclose(fi);
     fi = fopen(train_file, "rb");
-    fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
+    // fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
     while (1) {
         if (word_count - last_word_count > 10000) {
             word_count_actual += word_count - last_word_count;
@@ -736,17 +737,6 @@ void* TrainModelThread(void* id) {
                 word_count++;
                 if (word == 0)
                     break;
-                // The subsampling randomly discards frequent words while
-                // keeping the ranking same
-                if (sample > 0) {
-                    real ran =
-                        (sqrt(vocab[word].cn / (sample * train_words)) + 1) *
-                        (sample * train_words) / vocab[word].cn;
-                    next_random =
-                        next_random * (unsigned long long)25214903917 + 11;
-                    if (ran < (next_random & 0xFFFF) / (real)65536)
-                        continue;
-                }
                 sen[sentence_length] = word;
                 sentence_length++;
                 if (sentence_length >= MAX_SENTENCE_LENGTH)
@@ -754,9 +744,9 @@ void* TrainModelThread(void* id) {
             }
             sentence_position = 0;
         }
-        if (feof(fi) || (word_count > train_words / num_threads)) {
+        if (feof(fi)) {
             word_count_actual += word_count - last_word_count;
-            local_iter--;
+            // delete local_iter--
             if (local_iter == 0)
                 break;
             word_count = 0;
