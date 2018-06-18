@@ -694,7 +694,7 @@ void* TrainModelThread(void* id) {
         // printf("lastword = %s\n", vocab[last_word].word);
         // printf("codeleni = %d\n", vocab[word].codelen);
         // printf("my_p = %f\n", my_p);
-        printf("%s,%d,%f", vocab[word].word, vocab[word].codelen, my_p);
+        // printf("%s,%d,%f", vocab[word].word, vocab[word].codelen, my_p);
         /*
         for (int i = 0; i < vocab[word].codelen; i++) {
             printf("%i", vocab[word].code[i]);
@@ -704,6 +704,9 @@ void* TrainModelThread(void* id) {
         // printf("d = %i\n", vocab[word].code[my_d]);
         // printf("f = %f\n", f);
     }
+    fclose(fi);
+    fi = fopen(train_file, "rb");
+    fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
     while (1) {
         if (word_count - last_word_count > 10000) {
             word_count_actual += word_count - last_word_count;
@@ -847,7 +850,8 @@ void* TrainModelThread(void* id) {
             sentence_length = 0;
             continue;
         }
-        printf("final: %s,%d,%f", vocab[word].word, vocab[word].codelen, my_p);
+        printf("final: %s,%d,%f\n", vocab[word].word, vocab[word].codelen,
+               my_p);
         /*
         for (int i = 0; i < vocab[word].codelen; i++) {
             printf("%i", vocab[word].code[i]);
