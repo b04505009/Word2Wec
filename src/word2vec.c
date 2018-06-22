@@ -39,7 +39,7 @@ char train_file[MAX_STRING], output_file[MAX_STRING];
 char save_vocab_file[MAX_STRING], read_vocab_file[MAX_STRING];
 struct vocab_word* vocab;
 int binary = 0, cbow = 1, debug_mode = 2, window = 5, min_count = 5,
-    num_threads = 12, min_reduce = 1;
+    num_threads = 12, min_reduce = 1, load = 0;
 int* vocab_hash;
 long long vocab_max_size = 1000, vocab_size = 0, layer1_size = 100;
 long long train_words = 0, word_count_actual = 0, iter = 5, file_size = 0,
@@ -50,6 +50,7 @@ clock_t start;
 
 long long my_d = 0;
 real my_p = 1;
+real my_p2 = 1;
 
 int hs = 0, negative = 5;
 const int table_size = 1e8;
@@ -430,7 +431,9 @@ void* TrainModelThread(void* id) {
     real* neu1e = (real*)calloc(layer1_size, sizeof(real));
     FILE* fi = fopen(train_file, "rb");
     fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
-    while (1) {
+    if(load!=1)
+	{
+	while (1) {
         if (word_count - last_word_count > 10000) {
             word_count_actual += word_count - last_word_count;
             last_word_count = word_count;
@@ -690,23 +693,42 @@ void* TrainModelThread(void* id) {
             sentence_length = 0;
             continue;
         }
-        // printf("word = %s\n", vocab[word].word);
-        // printf("lastword = %s\n", vocab[last_word].word);
-        // printf("codeleni = %d\n", vocab[word].codelen);
-        // printf("my_p = %f\n", my_p);
-        // printf("%s,%d,%f", vocab[word].word, vocab[word].codelen, my_p);
-        /*
-        for (int i = 0; i < vocab[word].codelen; i++) {
-            printf("%i", vocab[word].code[i]);
-        }
-        printf("\n");
-*/
-        // printf("d = %i\n", vocab[word].code[my_d]);
-        // printf("f = %f\n", f);
     }
-    printf("local_iter: %lld\n", local_iter);
-    fclose(fi);
+	
+	//////////////Save Weight//////////////
+
+	FILE *fsyn0 = fopen("syn0", "wb");
+	fwrite(syn0, sizeof(float), sizeof(syn0), fsyn0);
+	fclose(fsyn0);
+
+	FILE *fsyn1 = fopen("syn1", "wb");
+	fwrite(syn1, sizeof(float), sizeof(syn1), fsyn1);
+	fclose(fsyn1);
+
+	//////////////////////////////////////
+	}else
+	{
+	puts("Loading Weight...");
+	//////////////Load Weight//////////////
+
+	FILE *fsyn0 = fopen("syn0", "rb");
+	fread(syn0, sizeof(float), sizeof(syn0), fsyn0);
+	fclose(fsyn0);
+
+	FILE *fsyn1 = fopen("syn1", "rb");
+	fread(syn1, sizeof(float), sizeof(syn1), fsyn1);
+	fclose(fsyn1);
+	local_iter = 0;
+
+	//////////////////////////////////////
+	}
+
+	fclose(fi);
     fi = fopen(train_file, "rb");
+	FILE * pFile;
+	FILE * pFile2;
+	pFile = fopen("output.txt", "w");
+	pFile2 = fopen("output2.txt", "w");
     // fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
     while (1) {
         if (word_count - last_word_count > 10000) {
@@ -717,7 +739,7 @@ void* TrainModelThread(void* id) {
                 printf(
                     "%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ",
                     13, alpha,
-                    word_count_actual / (real)(iter * train_words + 1) * 100,
+                    word_count_actual / (real)(1 * train_words + 1) * 100,
                     word_count_actual / ((real)(now - start + 1) /
                                          (real)CLOCKS_PER_SEC * 1000));
                 fflush(stdout);
@@ -778,8 +800,8 @@ void* TrainModelThread(void* id) {
                     last_word = sen[c];
                     if (last_word == -1)
                         continue;
-                    // for (c = 0; c < layer1_size; c++)
-                    // neu1[c] += syn0[c + last_word * layer1_size];
+                    for (c = 0; c < layer1_size; c++)
+                    	neu1[c] += syn0[c + last_word * layer1_size];
                     cw++;
                 }
             if (cw) {
@@ -787,6 +809,7 @@ void* TrainModelThread(void* id) {
                     neu1[c] /= cw;
                 if (hs) {
                     my_p = 1;
+                    my_p2 = 1;
                     for (d = 0; d < vocab[word].codelen; d++) {
                         f = 0;
                         l2 = vocab[word].point[d] * layer1_size;
@@ -804,10 +827,34 @@ void* TrainModelThread(void* id) {
                         // printf("%i\n", vocab[word].code[d]);
                         if (vocab[word].code[d] == 1) {
                             // printf("if\n");
-                            my_p *= (1 - f);
+							if(f <= 0.5)
+								my_p *= 1;
+							else
+								my_p = 0;
+                            //my_p *= (1 - f);
                         } else {
+							if(f > 0.5)
+								my_p *= 1;
+							else
+								my_p = 0;
                             // printf("else\n");
-                            my_p *= f;
+                            //my_p *= f;
+                        }
+                        
+						if (vocab[word].code[d] == 0) {
+                            // printf("if\n");
+							if(f <= 0.5)
+								my_p2 *= 1;
+							else
+								my_p2 = 0;
+                            //my_p *= (1 - f);
+                        } else {
+							if(f > 0.5)
+								my_p2 *= 1;
+							else
+								my_p2 = 0;
+                            // printf("else\n");
+                            //my_p *= f;
                         }
                         // 'g' is the gradient multiplied by the learning rate
                         // g = (1 - vocab[word].code[d] - f) * alpha;
@@ -840,9 +887,11 @@ void* TrainModelThread(void* id) {
             sentence_length = 0;
             continue;
         }
-        printf("final: %s,%d,%f\n", vocab[word].word, vocab[word].codelen,
-               my_p);
-        /*
+        //printf("%s,%d,%f\n", vocab[word].word, vocab[word].codelen, my_p);
+        fprintf(pFile,"%s,%d,%f\n", vocab[word].word, vocab[word].codelen, my_p);
+        fprintf(pFile2,"%s,%d,%f\n", vocab[word].word, vocab[word].codelen, my_p2);
+
+		/*
         for (int i = 0; i < vocab[word].codelen; i++) {
             printf("%i", vocab[word].code[i]);
         }
@@ -851,6 +900,10 @@ void* TrainModelThread(void* id) {
         // printf("d = %i\n", vocab[word].code[my_d]);
         // printf("f = %f\n", f);
     }
+
+	
+	fclose(pFile);
+	fclose(pFile2);
     fclose(fi);
     free(neu1);
     free(neu1e);
@@ -1070,6 +1123,8 @@ int main(int argc, char** argv) {
         min_count = atoi(argv[i + 1]);
     if ((i = ArgPos((char*)"-classes", argc, argv)) > 0)
         classes = atoi(argv[i + 1]);
+    if ((i = ArgPos((char*)"-load", argc, argv)) > 0)
+        load = atoi(argv[i + 1]);
     vocab =
         (struct vocab_word*)calloc(vocab_max_size, sizeof(struct vocab_word));
     vocab_hash = (int*)calloc(vocab_hash_size, sizeof(int));
