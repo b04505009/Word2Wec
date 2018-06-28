@@ -536,15 +536,6 @@ void* TrainModelThread(void* id) {
                         else
                             f = expTable[(int)((f + MAX_EXP) *
                                                (EXP_TABLE_SIZE / MAX_EXP / 2))];
-                        // my code
-                        // printf("%i\n", vocab[word].code[d]);
-                        if (vocab[word].code[d] == 1) {
-                            // printf("if\n");
-                            my_p *= (1 - f);
-                        } else {
-                            // printf("else\n");
-                            my_p *= f;
-                        }
                         // 'g' is the gradient multiplied by the learning rate
                         g = (1 - vocab[word].code[d] - f) * alpha;
                         // Propagate errors output -> hidden
@@ -705,10 +696,13 @@ void* TrainModelThread(void* id) {
 	fwrite(syn1, sizeof(float), sizeof(syn1), fsyn1);
 	fclose(fsyn1);
 
+
 	//////////////////////////////////////
 	}else
 	{
+	
 	puts("Loading Weight...");
+	
 	//////////////Load Weight//////////////
 
 	FILE *fsyn0 = fopen("syn0", "rb");
@@ -720,7 +714,10 @@ void* TrainModelThread(void* id) {
 	fclose(fsyn1);
 	local_iter = 0;
 
-	//////////////////////////////////////
+	printf("syn0 size:%d\n",sizeof(syn0));
+	printf("syn1 size:%d\n",sizeof(syn1));
+	///////////////----------/////////////
+	
 	}
 
 	fclose(fi);
@@ -781,10 +778,10 @@ void* TrainModelThread(void* id) {
         word = sen[sentence_position];
         if (word == -1)
             continue;
-        // for (c = 0; c < layer1_size; c++)
-        // neu1[c] = 0;
-        // for (c = 0; c < layer1_size; c++)
-        // neu1e[c] = 0;
+        for (c = 0; c < layer1_size; c++)
+        	neu1[c] = 0;
+        for (c = 0; c < layer1_size; c++)
+        	neu1e[c] = 0;
         next_random = next_random * (unsigned long long)25214903917 + 11;
         b = next_random % window;
         if (cbow) {  // train the cbow architecture
