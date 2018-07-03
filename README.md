@@ -1,6 +1,6 @@
 # Word2Vec: Reverse Hierarchical Softmax
 
-Analysis of four different structure for Word2Vec model training, including hierarchical softmax, hierarchical softmax with learning rate tuning, negative sampling, and reverse hierarchical softmax.
+Analysis of 4 different structure for Word2Vec model training, including hierarchical softmax, hierarchical softmax with learning rate tuning, negative sampling, and reverse hierarchical softmax.
 
 ## Getting Started
 
@@ -9,46 +9,40 @@ These instructions will get you a copy of the project up and running on your loc
 ### Run
 
 ```
-Give the example
+cd scripts && ./demo ${MODE}
 ```
 
-And repeat
+There are 4 mode:
+
+1. hs: hierarchical softmax
+2. hs_lr: hierarchical softmax with learning rate tuning 
+3. neg: Negative Sampling with 15 negative sample
+4. revhs: reverse hierarchical softmax
+
+
+For example:
 
 ```
-until finished
+cd scripts && ./demo hs_lr
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
 
-## Running the tests
+All the modes are sharing these parameters:
+* Output Layer Structure: CBOW
+* Word Vector Dimension: 300
+* Context Window Size: 8
+* Subsampling: 1e-4
+* Thread: 1 
+* Epochs: 15
 
-Explain how to run the automated tests for this system
 
-### Break down into end to end tests
+## Reference
 
-Explain what these tests test and why
 
-```
-Give an example
-```
+* [Word2Vec](https://code.google.com/p/word2vec/) - Google original project
+* [Word2Vec by dav](https://github.com/dav/word2vec) - Shell scripts reference
+* [Question set](https://github.com/k-kawakami/embedding-evaluation) - Embedding evaluation
 
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
 
 ## Contributing
 
@@ -60,16 +54,11 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Chung-Min Tsai** - [qa276390](https://github.com/qa276390)
+* **Xi-Zhen Liu** - [b04505009](https://github.com/b04505009/)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
