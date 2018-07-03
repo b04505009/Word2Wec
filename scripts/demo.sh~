@@ -7,6 +7,7 @@ DATA=../data/wiki_text
 REV_FILE=../src/word2vec_rev_hs.c
 
 #check if data exist
+
 if [ ! -e $DATA ]; then
 	pushd $DATA_DIR && sh prepare_wiki.sh; popd 
 fi
@@ -15,8 +16,9 @@ fi
 if [ ! -e $REV_FILE ]; then
 	mv ../src/word2vec.c $REV_FILE
 	mv ../src/word2vec_backup.c ../src/word2vec.c
-fi
+
 	pushd ${SRC_DIR} && make; popd
+fi
 
 MODE=$1
 if [ "${MODE}" = "hs" ]
