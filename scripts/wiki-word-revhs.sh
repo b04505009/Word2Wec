@@ -10,7 +10,7 @@ pushd ${SRC_DIR} && make; popd
 sh ./create-wiki-vector-data-revhs.sh
 
 set -x
-$BIN_DIR/compute-accuracy $VECTOR_DATA 210000 < $DATA_DIR/questions-words.txt
+$BIN_DIR/compute-accuracy $VECTOR_DATA 0 < $DATA_DIR/questions-words.txt
 
 set -x
 $BIN_DIR/distance $VECTOR_DATA
