@@ -35,22 +35,21 @@ All the modes are sharing these parameters:
 * Thread: 1 
 * Epochs: 15
 
+For more details explained, see [our report](https://github.com/qa276390/Word2Vec/blob/master/Analysis%20for%20Hierarchical%20Softmax%20in%20Word2Vec.pdf).
+
 
 ## Reference
 
 
 * [Word2Vec](https://code.google.com/p/word2vec/) - Google original project
 * [Word2Vec by dav](https://github.com/dav/word2vec) - Shell scripts reference
-* [Question set](https://github.com/k-kawakami/embedding-evaluation) - Embedding evaluation
+* [Question Set](https://github.com/k-kawakami/embedding-evaluation) - Embedding evaluation
 
 
 ## Contributing
 
 Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
 
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
 
 ## Authors
 
