@@ -1,43 +1,75 @@
-word2vec
-========
+# Word2Vec: Reverse Hierarchical Softmax
 
-Original from https://code.google.com/p/word2vec/
+Analysis of four different structure for Word2Vec model training, including hierarchical softmax, hierarchical softmax with learning rate tuning, negative sampling, and reverse hierarchical softmax.
 
-I've copied it to a github project so I can apply and track community patches for my needs (starting with capability for Mac OS X compilation).
+## Getting Started
 
-- ***makefile and some source has been modified for Mac OS X compilation*** See https://code.google.com/p/word2vec/issues/detail?id=1#c5
-- ***memory patch for word2vec has been applied*** See https://code.google.com/p/word2vec/issues/detail?id=2
-- Project file layout altered
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
-There seems to be a segfault in the compute-accuracy utility.
+### Run
 
-To get started: 
-    
-    cd scripts && ./demo-word.sh
+```
+Give the example
+```
 
-------------------------------------------------------
-Original README text follows:
+And repeat
 
+```
+until finished
+```
 
-This tool provides an efficient implementation of the continuous bag-of-words and skip-gram architectures for computing vector representations of words. These representations can be subsequently used in many natural language processing applications and for further research. 
+End with an example of getting some data out of the system or using it for a little demo
 
-Tools for computing distributed representation of words
-------------------------------------------------------
+## Running the tests
 
-We provide an implementation of the Continuous Bag-of-Words (CBOW) and the Skip-gram model (SG), as well as several demo scripts.
+Explain how to run the automated tests for this system
 
-Given a text corpus, the word2vec tool learns a vector for every word in the vocabulary using the Continuous
-Bag-of-Words or the Skip-Gram neural network architectures. The user should to specify the following:
- - desired vector dimensionality
- - the size of the context window for either the Skip-Gram or the Continuous Bag-of-Words model
- - training algorithm: hierarchical softmax and / or negative sampling
- - threshold for downsampling the frequent words 
- - number of threads to use
- - the format of the output word vector file (text or binary)
+### Break down into end to end tests
 
-Usually, the other hyper-parameters such as the learning rate do not need to be tuned for different training sets. 
+Explain what these tests test and why
 
-The script demo-word.sh downloads a small (100MB) text corpus from the web, and trains a small word vector model. After the training
-is finished, the user can interactively explore the similarity of the words.
+```
+Give an example
+```
 
-More information about the scripts is provided at https://code.google.com/p/word2vec/
+### And coding style tests
+
+Explain what these tests test and why
+
+```
+Give an example
+```
+
+## Deployment
+
+Add additional notes about how to deploy this on a live system
+
+## Built With
+
+* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
+* [Maven](https://maven.apache.org/) - Dependency Management
+* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+
+## Contributing
+
+Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+
+## Authors
+
+* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+
+See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
+## Acknowledgments
+
+* Hat tip to anyone whose code was used
+* Inspiration
+* etc
