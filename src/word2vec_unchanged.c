@@ -39,13 +39,13 @@ char train_file[MAX_STRING], output_file[MAX_STRING];
 char save_vocab_file[MAX_STRING], read_vocab_file[MAX_STRING];
 struct vocab_word* vocab;
 int binary = 0, cbow = 1, debug_mode = 2, window = 5, min_count = 5,
-    num_threads = 12, min_reduce = 1, load = 0;
+    num_threads = 12, min_reduce = 1, load = 0, lr_tune = 0;
 int* vocab_hash;
 long long vocab_max_size = 1000, vocab_size = 0, layer1_size = 100;
 long long train_words = 0, word_count_actual = 0, iter = 5, file_size = 0,
           classes = 0;
 real alpha = 0.025, starting_alpha, sample = 1e-3;
-real *syn0, *syn1, *syn1neg, *expTable;
+real *syn0, *syn1, *syn1neg, *expTable, *farray;
 clock_t start;
 
 long long my_d = 0;
@@ -409,6 +409,13 @@ void InitNet() {
         for (a = 0; a < vocab_size; a++)
             for (b = 0; b < layer1_size; b++)
                 syn1neg[a * layer1_size + b] = 0;
+
+        a = posix_memalign((void**)&farray, 128,
+                           (long long)vocab_size * sizeof(real));
+        if (farray == NULL) {
+            printf("Memory allocation failed\n");
+            exit(1);
+        }
     }
     for (a = 0; a < vocab_size; a++)
         for (b = 0; b < layer1_size; b++) {
@@ -420,6 +427,7 @@ void InitNet() {
 }
 
 void* TrainModelThread(void* id) {
+	puts("Original");	
     long long a, b, d, cw, word, last_word, sentence_length = 0,
                                             sentence_position = 0;
     long long word_count = 0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1];
@@ -522,6 +530,7 @@ void* TrainModelThread(void* id) {
                 for (c = 0; c < layer1_size; c++)
                     neu1[c] /= cw;
                 if (hs) {
+					//puts("hs");
                     my_p = 1;
                     for (d = 0; d < vocab[word].codelen; d++) {
                         f = 0;
@@ -537,8 +546,14 @@ void* TrainModelThread(void* id) {
                         else
                             f = expTable[(int)((f + MAX_EXP) *
                                                (EXP_TABLE_SIZE / MAX_EXP / 2))];
+                        
+						//printf("code, f = %i, %f\n", vocab[word].code[d], f);
+						//fflush(stdout);
                         // 'g' is the gradient multiplied by the learning rate
-                        g = (1 - vocab[word].code[d] - f) * alpha;
+						if(lr_tune)
+                        	g = (1 - vocab[word].code[d] - f) * alpha * (1.0 + (vocab[word].codelen) * 0.01);
+						else
+                        	g = (1 - vocab[word].code[d] - f) * alpha;
                         // Propagate errors output -> hidden
                         for (c = 0; c < layer1_size; c++)
                             neu1e[c] += g * syn1[c + l2];
@@ -549,6 +564,7 @@ void* TrainModelThread(void* id) {
                 }
                 // NEGATIVE SAMPLING
                 if (negative > 0)
+					//puts("neg");
                     for (d = 0; d < negative + 1; d++) {
                         if (d == 0) {
                             target = word;
@@ -598,6 +614,7 @@ void* TrainModelThread(void* id) {
                     }
             }
         } else {  // train skip-gram
+			//puts("skip-gram");
             for (a = b; a < window * 2 + 1 - b; a++)
                 if (a != window) {
                     c = sentence_position - window + a;
@@ -692,20 +709,36 @@ void* TrainModelThread(void* id) {
 	FILE *fsyn0 = fopen("syn0", "wb");
 	fwrite(syn0, sizeof(float), sizeof(syn0), fsyn0);
 	fclose(fsyn0);
+    
+	if (binary){
+		FILE * Fsyn0 = fopen("bsyn0", "wb");
+        for (a = 0; a < vocab_size; a++) {
+    		for (b = 0; b < layer1_size; b++){
+        		fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, Fsyn0);
+			}
+		}
+		fclose(Fsyn0);
+		if(hs){
 
-	if(hs){
-		FILE *fsyn1 = fopen("syn1", "wb");
-		fwrite(syn1, sizeof(float), sizeof(syn1), fsyn1);
-		fclose(fsyn1);
-	}
-	if(negative>0)
-	{
-		FILE *fsyn1 = fopen("syn1neg", "wb");
-		fwrite(syn1neg, sizeof(float), sizeof(syn1neg), fsyn1);
-		fclose(fsyn1);
+			FILE *fsyn1 = fopen("syn1", "wb");
+			fwrite(syn1, sizeof(float), sizeof(syn1), fsyn1);
+			fclose(fsyn1);
+			FILE *Fsyn1 = fopen("bsyn1","wb");
+    		for (a = 0; a < vocab_size; a++){
+    			for (b = 0; b < layer1_size; b++){
+        			fwrite(&syn1[a * layer1_size + b],sizeof(real),1,Fsyn1);
+				}
+			}
+
+		}
+		if(negative>0)
+		{
+			FILE *fsyn1 = fopen("syn1neg", "wb");
+			fwrite(syn1neg, sizeof(float), sizeof(syn1neg), fsyn1);
+			fclose(fsyn1);
 	
+		}
 	}
-
 
 	//////////////////////////////////////
 	}else
@@ -719,6 +752,7 @@ void* TrainModelThread(void* id) {
 	fread(syn0, sizeof(float), sizeof(syn0), fsyn0);
 	fclose(fsyn0);
 	
+
 	if(hs){
 		FILE *fsyn1 = fopen("syn1", "rb");
 		fread(syn1, sizeof(float), sizeof(syn1), fsyn1);
@@ -735,16 +769,32 @@ void* TrainModelThread(void* id) {
 
 	printf("syn0 size:%d\n",sizeof(syn0));
 	printf("syn1 size:%d\n",sizeof(syn1));
+
+		
 	///////////////----------/////////////
 	
 	}
-
+	/*
+	float tmp;
+	int counting;
+    for (a = 0; a < vocab_size; a++){
+    	for (b = 0; b < layer1_size; b++){
+        	tmp = syn1[a * layer1_size + b];
+			if(tmp==0)
+					counting++;
+		}
+	}
+    printf("zero count(syn1) = %d\n", counting);
+	//fflush(stdout);
+	*/
 	fclose(fi);
     fi = fopen(train_file, "rb");
 	FILE * pFile;
 	FILE * pFile2;
 	pFile = fopen("output.txt", "w");
 	pFile2 = fopen("output2.txt", "w");
+    fprintf(pFile,"vocab,codelen,count,label\n");
+    fprintf(pFile2,"vocab,codelen,count,label\n");
     // fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
     while (1) {
         if (word_count - last_word_count > 10000) {
@@ -832,15 +882,24 @@ void* TrainModelThread(void* id) {
                         // Propagate hidden -> output
                         for (c = 0; c < layer1_size; c++)
                             f += neu1[c] * syn1[c + l2];
-                        if (f <= -MAX_EXP)
+						
+						if(d==1||d==10){
+                        	//printf("!code, f = %i, %f\n", vocab[word].code[d], f);
+							//fflush(stdout);
+						}
+                        
+						if (f <= -MAX_EXP)
                             continue;
                         else if (f >= MAX_EXP)
                             continue;
                         else
                             f = expTable[(int)((f + MAX_EXP) *
                                                (EXP_TABLE_SIZE / MAX_EXP / 2))];
-                        // my code
-                        // printf("%i\n", vocab[word].code[d]);
+
+						if(d>=0){
+                        	//printf("-d, code, sigmoid(f) = %i, %i, %f\n", d,vocab[word].code[d], f);
+							//fflush(stdout);
+						}
                         if (vocab[word].code[d] == 1) {
                             // printf("if\n");
 							if(f <= 0.5)
@@ -885,6 +944,7 @@ void* TrainModelThread(void* id) {
                 // NEGATIVE SAMPLING
                 if (negative > 0){
 					my_p = 0;
+					my_p2 = 0;
 					/*
                     for (d = 0; d < negative + 1; d++) {
                         if (d == 0) {
@@ -905,9 +965,25 @@ void* TrainModelThread(void* id) {
 						target = word;
 						label = 1;
 						////////////////
+						real  maxf = 0;
+						int maxfidx = 0;
+						for(int widx = 0;widx< vocab_size;widx++)
+						{
+							l2 = widx * layer1_size;
+							farray[widx] = 0;
+							for(c = 0; c < layer1_size; c++)
+								farray[widx]+=neu1[c] * syn1neg[c + l2];
+							farray[widx] = expTable[(int)((farray[widx] + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
+							if(farray[widx]>maxf)
+							{
+								maxf = farray[widx];
+								maxfidx = widx;
+							}
+						}
 
-                        l2 = target * layer1_size;
+						l2 = target * layer1_size;
                         f = 0;
+
                         for (c = 0; c < layer1_size; c++)
                             f += neu1[c] * syn1neg[c + l2];
                         if (f > MAX_EXP)
@@ -920,6 +996,13 @@ void* TrainModelThread(void* id) {
                                                          MAX_EXP / 2))]) * alpha;
 
 						my_p =  expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
+
+						if(farray[target]!=my_p)
+								puts("Wrong!\n");
+						if(maxfidx=target)
+								my_p2 = 1;
+						else
+								my_p2 = 0;
                        // for (c = 0; c < layer1_size; c++)
                        //     neu1e[c] += g * syn1neg[c + l2];
                        // for (c = 0; c < layer1_size; c++)
@@ -947,8 +1030,8 @@ void* TrainModelThread(void* id) {
             continue;
         }
         //printf("%s,%d,%f\n", vocab[word].word, vocab[word].codelen, my_p);
-        fprintf(pFile,"%s,%d,%f\n", vocab[word].word, vocab[word].codelen, my_p);
-        fprintf(pFile2,"%s,%d,%f\n", vocab[word].word, vocab[word].codelen, my_p2);
+        fprintf(pFile,"%s,%d,%lli,%f\n", vocab[word].word, vocab[word].codelen, vocab[word].cn, my_p);
+        fprintf(pFile2,"%s,%d,%lli,%f\n", vocab[word].word, vocab[word].codelen, vocab[word].cn, my_p2);
 
 		/*
         for (int i = 0; i < vocab[word].codelen; i++) {
@@ -1184,6 +1267,8 @@ int main(int argc, char** argv) {
         classes = atoi(argv[i + 1]);
     if ((i = ArgPos((char*)"-load", argc, argv)) > 0)
         load = atoi(argv[i + 1]);
+    if ((i = ArgPos((char*)"-lr_tune", argc, argv)) > 0)
+        lr_tune = atoi(argv[i + 1]);
     vocab =
         (struct vocab_word*)calloc(vocab_max_size, sizeof(struct vocab_word));
     vocab_hash = (int*)calloc(vocab_hash_size, sizeof(int));
