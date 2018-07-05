@@ -9,7 +9,7 @@ These instructions will get you a copy of the project up and running on your loc
 ### Run
 
 ```
-cd scripts && ./demo ${MODE}
+cd scripts && ./demo.sh ${MODE}
 ```
 
 There are 4 mode:
@@ -23,7 +23,7 @@ There are 4 mode:
 For example:
 
 ```
-cd scripts && ./demo hs_lr
+cd scripts && ./demo.sh hs_lr
 ```
 
 
