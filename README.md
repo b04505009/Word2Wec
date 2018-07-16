@@ -35,7 +35,7 @@ All the modes are sharing these parameters:
 * Thread: 1 
 * Epochs: 15
 
-For more details explained, see [our report](https://github.com/qa276390/Word2Vec/blob/master/Analysis%20for%20Hierarchical%20Softmax%20in%20Word2Vec.pdf).
+For more details explained, see [our report](https://github.com/qa276390/Word2Vec/blob/master/Analysis_for_Hierarchical_Softmax_in_Word2Vec.pdf).
 
 
 ## Reference
