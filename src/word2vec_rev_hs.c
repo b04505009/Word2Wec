@@ -959,7 +959,7 @@ void* TrainModelThread(void* id) {
                     }
                 }
                 // NEGATIVE SAMPLING
-                if (negative > 0) {
+                if (negative > 0 && hs <= 0) {
                     my_p = 0;
                     /*
 for (d = 0; d < negative + 1; d++) {
